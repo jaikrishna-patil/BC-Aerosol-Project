@@ -13,6 +13,8 @@ Type of split for evaluation | Best results yet(Mean absolute error)- Using wave
 ------------- | -------------
 Random split | Mean absolute error on test set [fractal_dimension, fraction_of_coating]:-   [0.02767658 0.4789153 ]
 
+## Installing the required packages
+You can install all required packages to run the experiments using [conda](https://docs.conda.io/en/latest/). The following command should be enough: `conda env create -f conda_env.yml`. If you want GPU support, use `conda_env_gpu.yml`instead.
 
 ## Visualizing the experiments
 We use [sacred](https://sacred.readthedocs.io/en/stable/) and [omniboard](https://github.com/vivekratnavel/omniboard) to keep track of experiments. Both can be run either in a local installation or using docker.
