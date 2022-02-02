@@ -97,8 +97,11 @@ if __name__ == '__main__':
     def config():
         params = dict(
             split='fractal_dimension',
-            test_values=[2.1,2.2],
-            epochs=1000,
+            split_type='interpolating',
+            split_lower=-1,
+            split_upper=-1,
+            epochs=500,
+            patience=100,
             batch_size=32,
             #n_hidden=8,
             #dense_units=[416, 288, 256,256, 192,448,288,128, 352,224],
@@ -115,18 +118,36 @@ if __name__ == '__main__':
         params = Bunch(params)
 
         #Load dataset
-        df = pd.read_csv('database.csv')
+        df = pd.read_excel('database_new.xlsx')
         X = df.iloc[:, :8]
         Y = df.iloc[:, 25:28]
 
         # Split on fractal dimension
-        train_set = df[(df['fractal_dimension'] < 2.1) | (df['fractal_dimension'] > 2.2)]
-        test_set = df[(df['fractal_dimension'] == 2.1) | (df['fractal_dimension'] == 2.2)]
+        if params.split_type == 'interpolating':
+
+            train_set = df[(df['fractal_dimension'] < params.split_lower) | (df['fractal_dimension'] > params.split_upper)]
+            test_set = df[(df['fractal_dimension'] >= params.split_lower) & (df['fractal_dimension'] <= params.split_upper)]
+
+        elif params.split_type == 'extrapolating_lower':
+            train_set = df[(df['fractal_dimension'] > params.split_lower)]
+            test_set = df[(df['fractal_dimension'] <= params.split_lower)]
+        elif params.split_type == 'extrapolating_upper':
+            train_set = df[(df['fractal_dimension'] < params.split_upper)]
+            test_set = df[(df['fractal_dimension'] >= params.split_upper)]
+        print(len(test_set))
 
         Y_train = train_set.iloc[:, 25:28]
         X_train = train_set.iloc[:, :8]
         Y_test = test_set.iloc[:, 25:28]
         X_test = test_set.iloc[:, :8]
+
+        # Standardizing data and targets
+        scaling_x = StandardScaler()
+        scaling_y = StandardScaler()
+        X_train = scaling_x.fit_transform(X_train)
+        X_test = scaling_x.transform(X_test)
+        Y_train = scaling_y.fit_transform(Y_train)
+        Y_test = scaling_y.transform(Y_test)
 
         #Build NN model
 
@@ -134,7 +155,7 @@ if __name__ == '__main__':
 
         #Compile model
         model.compile(loss=params.loss, optimizer='adam',
-                      metrics=[params.loss])
+                      metrics=['mean_absolute_error'])
 
         print(model.summary())
 
@@ -147,7 +168,7 @@ if __name__ == '__main__':
             checkpoint = ModelCheckpoint(model_file.name, verbose=1, monitor='val_loss', save_best_only=True, mode='auto')
 
             # # patient early stopping
-            es = EarlyStopping(monitor='val_loss', patience=200, verbose=1)
+            es = EarlyStopping(monitor='val_loss', patience=params.patience, verbose=1)
 
             #log_csv = CSVLogger('fractal_dimension_loss_logs.csv', separator=',', append=False)
 
@@ -175,11 +196,15 @@ if __name__ == '__main__':
             weights_file = f'fractal_dimension_{_run._id}/best_model.hdf5'  # choose the best checkpoint
             model.load_weights(model_file.name)  # load it
             model.compile(loss=params.loss, optimizer='adam', metrics=[params.loss])
-        #Evaluate
-        Y_pred = model.predict(X_test)
+        # Evaluate plus inverse transforms
 
-        #logging Y_test values
-        Y_test.reset_index(inplace=True, drop=True)
+        Y_test = scaling_y.inverse_transform(Y_test)
+        Y_pred = model.predict(X_test)
+        Y_pred = scaling_y.inverse_transform(Y_pred)
+
+        # logging Y_test values
+        Y_test = pd.DataFrame(data=Y_test, columns=["q_abs", "q_sca", "g"])
+        #Y_test.reset_index(inplace=True, drop=True)
         for i in Y_test['q_abs']:
             _run.log_scalar('Actual q_abs', i)
         for i in Y_test['q_sca']:
