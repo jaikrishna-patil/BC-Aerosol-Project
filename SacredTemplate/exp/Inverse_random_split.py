@@ -76,8 +76,9 @@ if __name__ == '__main__':
         params = Bunch(params)
 
         #Load dataset
-        df = pd.read_csv('database.csv')
-        X = df.iloc[:, [0, 3, 6, 24, 25, 26, 27]]
+        df = pd.read_excel('database_new.xlsx')
+        #X = df.iloc[:, [0, 3, 6, 24, 25, 26, 27]]
+        X = df.iloc[:, [0, 24, 25, 26, 27]]
         Y = df.iloc[:, [1, 2]]
 
         X_train, X_test, Y_train, Y_test = train_test_split(
@@ -99,7 +100,7 @@ if __name__ == '__main__':
 
         #Compile model
         model.compile(loss=params.loss, optimizer='adam',
-                      metrics=[params.loss])
+                      metrics=['mean_absolute_error'])
 
         print(model.summary())
 

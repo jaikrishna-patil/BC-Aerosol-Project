@@ -8,7 +8,7 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input, LeakyReLU
+from tensorflow.keras.layers import Dense, Input, LeakyReLU, PReLU, ReLU
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, CSVLogger
 from sklearn.metrics import mean_absolute_percentage_error,mean_absolute_error
 
@@ -37,7 +37,7 @@ def build_model():
     # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
     # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
     model.add(Dense(3, kernel_initializer='normal', activation='linear'))
-
+    #model.add(PReLU())
     # output_dense[:,0]=tf.keras.activations.sigmoid(output_dense[:,0])
     # output_q_abs=  tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,0:1])
     # output_q_sca= tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,1:2])
@@ -97,14 +97,18 @@ if __name__ == '__main__':
     def config():
         params = dict(
             split='fraction_of_coating',
-            test_values=[40,50],
-            epochs=1000,
+            split_type='interpolating',
+            split_lower=40,
+            split_upper=60,
+            test_values=[40,60],
+            epochs=500,
+            patience=100,
             batch_size=32,
             #n_hidden=8,
             #dense_units=[416, 288, 256,256, 192,448,288,128, 352,224],
             #kernel_initializer=['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'],
             activation='relu',
-            loss='mean_squared_error'
+            loss='huber_loss'
             #range=(10, 15)
         )
 
@@ -115,24 +119,35 @@ if __name__ == '__main__':
         params = Bunch(params)
 
         #Load dataset
-        df = pd.read_csv('database.csv')
+        df = pd.read_excel('database_new.xlsx')
         X = df.iloc[:, :8]
         Y = df.iloc[:, 25:28]
 
         # split on fraction of coating
+        if params.split_type=='interpolating':
 
-        train_set = df[(df['fraction_of_coating'] < 40) | (df['fraction_of_coating'] > 50)]
-        test_set = df[(df['fraction_of_coating'] == 40) | (df['fraction_of_coating'] == 50)]
+            train_set = df[(df['fraction_of_coating'] < params.split_lower) | (df['fraction_of_coating'] > params.split_upper)]
+            test_set = df[(df['fraction_of_coating'] >= params.split_lower) & (df['fraction_of_coating'] <= params.split_upper)]
+
+        elif params.split_type=='extrapolating_lower':
+            train_set = df[(df['fraction_of_coating'] > params.split_lower)]
+            test_set = df[(df['fraction_of_coating'] <= params.split_lower)]
+        elif params.split_type=='extrapolating_upper':
+            train_set = df[(df['fraction_of_coating'] < params.split_upper)]
+            test_set = df[(df['fraction_of_coating'] >= params.split_upper)]
 
         Y_train = train_set.iloc[:, 25:28]
         X_train = train_set.iloc[:, :8]
         Y_test = test_set.iloc[:, 25:28]
         X_test = test_set.iloc[:, :8]
 
-        # Normalizing data
+        # Standardizing data and targets
         scaling_x = StandardScaler()
+        scaling_y = StandardScaler()
         X_train = scaling_x.fit_transform(X_train)
         X_test = scaling_x.transform(X_test)
+        Y_train = scaling_y.fit_transform(Y_train)
+        Y_test = scaling_y.transform(Y_test)
 
         #Build NN model
 
@@ -140,7 +155,7 @@ if __name__ == '__main__':
 
         #Compile model
         model.compile(loss=params.loss, optimizer='adam',
-                      metrics=[params.loss])
+                      metrics=['mean_absolute_error'])
 
         print(model.summary())
 
@@ -153,7 +168,7 @@ if __name__ == '__main__':
             checkpoint = ModelCheckpoint(model_file.name, verbose=1, monitor='val_loss', save_best_only=True, mode='auto')
 
             # # patient early stopping
-            es = EarlyStopping(monitor='val_loss', patience=200, verbose=1)
+            es = EarlyStopping(monitor='val_loss', patience=params.patience, verbose=1)
 
             #log_csv = CSVLogger('fractal_dimension_loss_logs.csv', separator=',', append=False)
 
@@ -181,11 +196,16 @@ if __name__ == '__main__':
             weights_file = f'fraction_of_coating_{_run._id}/best_model.hdf5'  # choose the best checkpoint
             model.load_weights(model_file.name)  # load it
             model.compile(loss=params.loss, optimizer='adam', metrics=[params.loss])
-        #Evaluate
-        Y_pred = model.predict(X_test)
+        # Evaluate plus inverse transforms
 
-        #logging Y_test values
-        Y_test.reset_index(inplace=True, drop=True)
+        Y_test = scaling_y.inverse_transform(Y_test)
+        Y_pred = model.predict(X_test)
+        Y_pred = scaling_y.inverse_transform(Y_pred)
+
+        # logging Y_test values
+        Y_test = pd.DataFrame(data=Y_test, columns=["q_abs", "q_sca", "g"])
+        # Y_test.reset_index(inplace=True, drop=True)
+
         for i in Y_test['q_abs']:
             _run.log_scalar('Actual q_abs', i)
         for i in Y_test['q_sca']:

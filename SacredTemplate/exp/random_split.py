@@ -26,10 +26,10 @@ def build_model():
     model.add(Dense(672, kernel_initializer='normal', activation='relu'))
     model.add(Dense(960, kernel_initializer='normal', activation='relu'))
     model.add(Dense(736, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(32, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(192, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(32, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(192, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(160, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(160, kernel_initializer='normal', activation='relu'))
 
     #model.add(Dense(224, kernel_initializer='normal', activation='relu'))
     #model.add(Dense(128, kernel_initializer='normal', activation='relu'))
@@ -115,7 +115,7 @@ if __name__ == '__main__':
         params = Bunch(params)
 
         #Load dataset
-        df = pd.read_csv('database.csv')
+        df = pd.read_excel('database_new.xlsx')
         X = df.iloc[:, :8]
         Y = df.iloc[:, 25:28]
 
@@ -126,10 +126,13 @@ if __name__ == '__main__':
             test_size=0.25,
             random_state=42)
 
-        # Normalizing data
+        # Standardizing data and targets
         scaling_x = StandardScaler()
+        scaling_y = StandardScaler()
         X_train = scaling_x.fit_transform(X_train)
         X_test = scaling_x.transform(X_test)
+        Y_train = scaling_y.fit_transform(Y_train)
+        Y_test = scaling_y.transform(Y_test)
 
         #Build NN model
 
@@ -137,7 +140,7 @@ if __name__ == '__main__':
 
         #Compile model
         model.compile(loss=params.loss, optimizer='adam',
-                      metrics=[params.loss])
+                      metrics=['mean_absolute_error'])
 
         print(model.summary())
 
@@ -178,11 +181,15 @@ if __name__ == '__main__':
             weights_file = f'random_split_{_run._id}/best_model.hdf5'  # choose the best checkpoint
             model.load_weights(model_file.name)  # load it
             model.compile(loss=params.loss, optimizer='adam', metrics=[params.loss])
-        #Evaluate
+        # Evaluate plus inverse transforms
+
+        Y_test = scaling_y.inverse_transform(Y_test)
         Y_pred = model.predict(X_test)
+        Y_pred = scaling_y.inverse_transform(Y_pred)
 
         #logging Y_test values
-        Y_test.reset_index(inplace=True, drop=True)
+        Y_test = pd.DataFrame(data=Y_test, columns=["q_abs", "q_sca", "g"])
+        #Y_test.reset_index(inplace=True, drop=True)
         for i in Y_test['q_abs']:
             _run.log_scalar('Actual q_abs', i)
         for i in Y_test['q_sca']:
@@ -191,6 +198,7 @@ if __name__ == '__main__':
             _run.log_scalar('Actual g', i)
         #logging predicted values
         Y_pred = pd.DataFrame(data=Y_pred, columns=["q_abs", "q_sca", "g"])
+        #print(Y_pred)
         for i in Y_pred['q_abs']:
             _run.log_scalar('Predicted q_abs', i)
         for i in Y_pred['q_sca']:
