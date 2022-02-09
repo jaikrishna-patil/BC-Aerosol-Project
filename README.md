@@ -1,10 +1,22 @@
 # Black-Carbon-Aerosol-Project
 ## Results for Evaluation on Mean absolute error and trained using Mean squared error:
+Range of q_abs: 0.041394 to 2.1851
+Range of q_abs: 0.00038915 to 2.9546
+Range of q_abs: 0.0036714 to 0.9252
+
 Type of split for evaluation | Best results yet(Mean absolute error)
 ------------- | -------------
 Random split | Mean absolute error on test set [q_abs, q_sca, g]:-   [0.00238034 0.00192617 0.00298648]
 Fractal_dimension=2.1, 2.2 left out for evaluation  | Mean absolute error on test set [q_abs, q_sca, g]:-   [0.01714607 0.0415282  0.02505202]
 Fraction of coating=40, 50 left out for evaluation  | Mean absolute error on test set [q_abs, q_sca, g]:-   [0.00939356 0.00609494 0.01331163]
+## Minmax normalization with 2 layers only of 512 hidden units (Interpolating )
+
+Type of split for evaluation | Best results yet(Mean absolute error)
+------------- | -------------
+Random split | Mean absolute error on test set [q_abs, q_sca, g]:-   
+Fractal_dimension=2.1, 2.3,2.5 left out for evaluation  | Mean absolute error on test set [q_abs, q_sca, g]:-   [0.01361621 0.01932381 0.01654189]
+Fraction of coating=30,40, 50 left out for evaluation  | Mean absolute error on test set [q_abs, q_sca, g]:-   [0.00886565 0.0082512  0.01068443]
+
 
 ## Results for inverse problem:(Trained using MSE and evaulated using mean absolute error)
 ### Standardized output values too
