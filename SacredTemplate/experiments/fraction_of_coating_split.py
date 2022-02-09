@@ -6,7 +6,7 @@ import sys
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input, LeakyReLU, PReLU, ReLU
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, CSVLogger
@@ -18,36 +18,6 @@ from sklearn.metrics import mean_absolute_percentage_error,mean_absolute_error
 sys.path.append("../src")
 from utils.experiment import Bunch, make_experiment, make_experiment_tempfile
 
-def build_model():
-    model = Sequential()
-    model.add(Input(shape=(8,)))
-    model.add(Dense(544, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(512, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(672, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(960, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(736, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(32, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(192, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-
-    #model.add(Dense(224, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(128, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(64, kernel_initializer='normal', activation='relu'))
-    # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(3, kernel_initializer='normal', activation='linear'))
-    #model.add(PReLU())
-    # output_dense[:,0]=tf.keras.activations.sigmoid(output_dense[:,0])
-    # output_q_abs=  tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,0:1])
-    # output_q_sca= tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,1:2])
-    # output_g= tf.keras.layers.Activation(tf.nn.sigmoid)(output_dense[:,2:3])
-    # print(output_dense.shape)
-
-    # model=tf.keras.Model(inputs=input_layer, outputs= [output_q_abs, output_q_sca, output_g])
-    # model = tf.keras.Model(inputs=input_layer, outputs=output_dense)
-
-    return model
 """
 
 def build_model():
@@ -89,6 +59,36 @@ def build_model():
     return model
 """
 
+def build_model():
+    model = Sequential()
+    model.add(Input(shape=(8,)))
+    model.add(Dense(544, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(512, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(672, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(960, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(736, kernel_initializer='normal', activation='relu'))
+    #model.add(Dense(32, kernel_initializer='normal', activation='relu'))
+    #model.add(Dense(192, kernel_initializer='normal', activation='relu'))
+    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
+    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
+
+    #model.add(Dense(224, kernel_initializer='normal', activation='relu'))
+    #model.add(Dense(128, kernel_initializer='normal', activation='relu'))
+    #model.add(Dense(64, kernel_initializer='normal', activation='relu'))
+    # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
+    # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(3, kernel_initializer='normal', activation='sigmoid'))
+
+    # output_dense[:,0]=tf.keras.activations.sigmoid(output_dense[:,0])
+    # output_q_abs=  tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,0:1])
+    # output_q_sca= tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,1:2])
+    # output_g= tf.keras.layers.Activation(tf.nn.sigmoid)(output_dense[:,2:3])
+    # print(output_dense.shape)
+
+    # model=tf.keras.Model(inputs=input_layer, outputs= [output_q_abs, output_q_sca, output_g])
+    # model = tf.keras.Model(inputs=input_layer, outputs=output_dense)
+
+    return model
 if __name__ == '__main__':
     experiment = make_experiment()
 
@@ -98,17 +98,18 @@ if __name__ == '__main__':
         params = dict(
             split='fraction_of_coating',
             split_type='interpolating',
-            split_lower=40,
-            split_upper=60,
-            test_values=[40,60],
-            epochs=500,
+            split_lower=-1,
+            split_upper=-1,
+            hidden_layers=-1,
+            epochs=1000,
             patience=100,
             batch_size=32,
+            hidden_units=512,
             #n_hidden=8,
             #dense_units=[416, 288, 256,256, 192,448,288,128, 352,224],
             #kernel_initializer=['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'],
             activation='relu',
-            loss='huber_loss'
+            loss='mean_squared_error'
             #range=(10, 15)
         )
 
@@ -142,8 +143,8 @@ if __name__ == '__main__':
         X_test = test_set.iloc[:, :8]
 
         # Standardizing data and targets
-        scaling_x = StandardScaler()
-        scaling_y = StandardScaler()
+        scaling_x = MinMaxScaler()
+        scaling_y = MinMaxScaler()
         X_train = scaling_x.fit_transform(X_train)
         X_test = scaling_x.transform(X_test)
         Y_train = scaling_y.fit_transform(Y_train)
@@ -151,7 +152,16 @@ if __name__ == '__main__':
 
         #Build NN model
 
-        model = build_model()#params.actuvation
+        #model = build_model()#params.actuvation
+        model = Sequential()
+        model.add(Input(shape=(8,)))
+        for j in range(0, params.hidden_layers):
+
+            model.add(Dense(params.hidden_units, kernel_initializer='normal', activation='relu'))
+
+        model.add(Dense(3, kernel_initializer='normal', activation='sigmoid'))
+
+
 
         #Compile model
         model.compile(loss=params.loss, optimizer='adam',
@@ -235,5 +245,5 @@ if __name__ == '__main__':
 
         #error=error*100
         print('Mean absolute error on test set [q_abs, q_sca, g]:-  ', error)
-
+        _run.info['error'] = error
 

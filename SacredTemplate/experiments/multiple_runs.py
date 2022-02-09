@@ -60,15 +60,15 @@ if __name__ == '__main__':
     def config():
         params = dict(
             split='multiple runs to check loss function random split',
-            max_runs=10,
-            patience=100,
-            epochs=500,
-            batch_size=32,
+            max_runs=3,
+            patience=5,
+            epochs=5,
+            batch_size=32
             #n_hidden=8,
             #dense_units=[416, 288, 256,256, 192,448,288,128, 352,224],
             #kernel_initializer=['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'],
             #activation='relu',
-            loss='huber_loss'
+            #loss='huber_loss'
             #range=(10, 15)
         )
 
@@ -155,8 +155,13 @@ if __name__ == '__main__':
             print(f'Mean Error for loss: {losses} is {error_mean}')
             error_std = np.std(multiple_errors, axis=0)
             print(f'std deviation for Error for loss: {losses} is {error_std}')
-            dict_means[losses]=error_mean
+            dict_means[losses]= error_mean
             dict_stds[losses] = error_std
+            _run.info[f'{losses}_distribution']= multiple_errors
+            _run.info[f'{losses}_mean']= error_mean
+            _run.info[f'{losses}_std'] = error_std
+
+
 
 
         # Draw box plots for both

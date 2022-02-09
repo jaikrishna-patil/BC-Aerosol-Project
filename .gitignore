@@ -1,4 +1,8 @@
-
+#Dataset
+SacredTemplate/experiments/database_new.xlsx
+Notebooks/database_new.xlsx
+Notebooks/database.csv
+SacredTemplate/dump.gz
 # Created by https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,jupyternotebooks
 
