@@ -129,7 +129,7 @@ if __name__ == '__main__':
             patience=100,
             hidden_layers=0,
             batch_size=32,
-            hidden_unis=512,
+            hidden_units=512,
             # n_hidden=8,
             # dense_units=[416, 288, 256,256, 192,448,288,128, 352,224],
             # kernel_initializer=['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'],
@@ -179,7 +179,7 @@ if __name__ == '__main__':
         Y_test = scaling_y.transform(Y_test)
         """
         # Normalizaing Min max
-        scaling_x = MinMaxScaler()
+        scaling_x = StandardScaler()
         scaling_y = MinMaxScaler()
         X_train = scaling_x.fit_transform(X_train)
         X_test = scaling_x.transform(X_test)
@@ -192,10 +192,7 @@ if __name__ == '__main__':
         model.add(Input(shape=(8,)))
         for j in range(0, params.hidden_layers):
 
-            if j==params.hidden_layers-1:
-                model.add(Dense(128, kernel_initializer='normal', activation='relu'))
-                break
-            model.add(Dense(params.hidden_units, kernel_initializer='normal', activation='relu'))
+            model.add(Dense(params.hidden_units, kernel_initializer='he_normal', activation='relu'))
 
 
         model.add(Dense(3, kernel_initializer='normal', activation='sigmoid'))

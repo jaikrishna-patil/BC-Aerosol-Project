@@ -3,6 +3,7 @@ SacredTemplate/experiments/database_new.xlsx
 Notebooks/database_new.xlsx
 Notebooks/database.csv
 SacredTemplate/dump.gz
+SacredTemplate/data
 # Created by https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,jupyternotebooks
 

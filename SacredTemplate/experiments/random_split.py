@@ -128,7 +128,7 @@ if __name__ == '__main__':
             random_state=int(np.random.randint(2,100, size=1)))
 
         # Normalizaing Min max
-        scaling_x = MinMaxScaler()
+        scaling_x = StandardScaler()
         scaling_y = MinMaxScaler()
         X_train = scaling_x.fit_transform(X_train)
         X_test = scaling_x.transform(X_test)
