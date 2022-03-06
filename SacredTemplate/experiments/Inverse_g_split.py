@@ -8,7 +8,7 @@ import sys
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input, ReLU, PReLU
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, CSVLogger
@@ -64,19 +64,21 @@ if __name__ == '__main__':
     @experiment.config
     def config():
         params = dict(
-            split='g',
+            split='inverse_g',
             split_type='interpolating',
             split_lower=-1,
             split_upper=-1,
-            test_values=[],
             epochs=1000,
             patience=100,
             batch_size=32,
+            kernel_initializer='he_normal',
+            hidden_layers=2,
+            hidden_units=512,
             #n_hidden=8,
             #dense_units=[416, 288, 256,256, 192,448,288,128, 352,224],
             #kernel_initializer=['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'],
             activation='relu',
-            loss='huber_loss'
+            loss='mean_squared_error'
             #range=(10, 15)
         )
 
@@ -109,9 +111,9 @@ if __name__ == '__main__':
         Y_test = test_set.iloc[:, [1,2]]
         X_test = test_set.iloc[:, [0, 3, 6, 24, 25, 26, 27]]
 
-        # Standardizing data and targets
-        scaling_x = StandardScaler()
-        scaling_y = StandardScaler()
+        # Normalizing data and targets
+        scaling_x = MinMaxScaler()
+        scaling_y = MinMaxScaler()
         X_train = scaling_x.fit_transform(X_train)
         X_test = scaling_x.transform(X_test)
         Y_train = scaling_y.fit_transform(Y_train)
@@ -119,7 +121,13 @@ if __name__ == '__main__':
 
         #Build NN model
 
-        model = build_model()#params.actuvation
+        #model = build_model()#params.actuvation
+        model = Sequential()
+        model.add(Input(shape=(7,)))
+        for j in range(0, params.hidden_layers):
+            model.add(Dense(params.hidden_units, kernel_initializer=params.kernel_initializer, activation='relu'))
+
+        model.add(Dense(2, kernel_initializer='glorot_normal', activation='sigmoid'))
 
         #Compile model
         model.compile(loss=params.loss, optimizer='adam',
@@ -130,7 +138,7 @@ if __name__ == '__main__':
 
         #Running and logging model plus Early stopping
 
-        filepath = f"inverse_g_split_{_run._id}/best_model.hdf5"
+        filepath = f"inverse_q_abs_split_{_run._id}/best_model.hdf5"
         with make_experiment_tempfile('best_model.hdf5', _run, mode='wb', suffix='.hdf5') as model_file:
             #print(model_file.name)
             checkpoint = ModelCheckpoint(model_file.name, verbose=1, monitor='val_loss', save_best_only=True, mode='auto')
@@ -161,7 +169,7 @@ if __name__ == '__main__':
                 _run.log_scalar('Validation loss', val_loss[epoch])
 
             #Use best model to predict
-            weights_file = f'inverse_g_split_{_run._id}/best_model.hdf5'  # choose the best checkpoint
+            weights_file = f'inverse_q_abs_split_{_run._id}/best_model.hdf5'  # choose the best checkpoint
             model.load_weights(model_file.name)  # load it
             model.compile(loss=params.loss, optimizer='adam', metrics=[params.loss])
         #Evaluate plus inverse transforms
@@ -193,7 +201,7 @@ if __name__ == '__main__':
             _run.log_scalar('Absolute error fraction_of_coating', i)
 
         error = mean_absolute_error(Y_test, Y_pred, multioutput='raw_values')
-
+        _run.info['error'] = error
 
 
         #error=error*100

@@ -7,24 +7,21 @@ import pickle
 
 def main():
     df_testing= pd.read_csv('..\data\database.csv')
-    #df_training=pd.read_excel('..\data\database_new.xlsx')
-
-    #X_train = df_training.iloc[:, :8]
-    #Y_train = df_training.iloc[:, 25:28]
     X_test = df_testing.loc[:, ['wavelength', 'fractal_dimension', 'fraction_of_coating', 'primary_particle_size',
                    'number_of_primary_particles',
                    'vol_equi_radius_outer', 'vol_equi_radius_inner', 'equi_mobility_dia']]
     # Normalizaing Min max
-    scaling_x = MinMaxScaler()
+    #scaling_x = MinMaxScaler()
     #scaling_y = MinMaxScaler()
     #X_train = scaling_x.fit_transform(X_train)
-    X_test = scaling_x.fit_transform(X_test)
+    #X_test = scaling_x.fit_transform(X_test)
     #Y_train = scaling_y.fit_transform(Y_train)
+    scaling_x = pickle.load(open('..\data\scaler_x.sav', 'rb'))
+    scaling_y = pickle.load(open('..\data\scaler_y.sav', 'rb'))
+    X_test= scaling_x.transform(X_test)
 
-    model = load_model('best_model.hdf5')
+    model = load_model('../data/best_model_forward.hdf5')
     Y_test = model.predict(X_test)
-    scalerfile = 'scaler.sav'
-    scaling_y = pickle.load(open(scalerfile, 'rb'))
     Y_test = scaling_y.inverse_transform(Y_test)
     #print(Y_test)
 
@@ -40,12 +37,52 @@ def main():
     vol_equi_radius_outer = df_testing['vol_equi_radius_outer']
     equi_mobility_dia = df_testing['equi_mobility_dia']
 
-    mie_epsilon = np.zeros_like(wavelength) + 2 #Check
+    mie_epsilon = np.zeros_like(wavelength) + 2
     length_scale_factor = 2 * math.pi / wavelength
-    m_real_bc= np.zeros_like(wavelength) + 2 #Check
-    m_im_bc= np.zeros_like(wavelength) + 2 #Check
-    m_real_organics= np.zeros_like(wavelength) + 2 #Check
-    m_im_organics= np.zeros_like(wavelength) + 2 #Check
+
+    m_real_bc=np.empty_like(wavelength)
+    for i in range(0,len(wavelength)):
+        if wavelength[i]==467:
+            m_real_bc[i]=1.92
+        elif wavelength[i]==530:
+            m_real_bc[i]=1.96
+        elif wavelength[i]==660:
+            m_real_bc[i]=2
+        else:
+            m_real_bc[i]=np.nan
+
+    m_im_bc = np.empty_like(wavelength)
+    for i in range(0, len(wavelength)):
+        if wavelength[i] == 467:
+            m_im_bc[i] = 0.67
+        elif wavelength[i] == 530:
+            m_im_bc[i] = 0.65
+        elif wavelength[i] == 660:
+            m_im_bc[i] = 0.63
+        else:
+            m_im_bc[i] = np.nan
+
+    m_real_organics = np.empty_like(wavelength)
+    for i in range(0, len(wavelength)):
+        if wavelength[i] == 467:
+            m_real_organics[i] = 1.59
+        elif wavelength[i] == 530:
+            m_real_organics[i] = 1.47
+        elif wavelength[i] == 660:
+            m_real_organics[i] = 1.47
+        else:
+            m_real_organics[i] = np.nan
+
+    m_im_organics = np.empty_like(wavelength)
+    for i in range(0, len(wavelength)):
+        if wavelength[i] == 467:
+            m_im_organics[i] = 0.11
+        elif wavelength[i] == 530:
+            m_im_organics[i] = 0.04
+        elif wavelength[i] == 660:
+            m_im_organics[i] = 0
+        else:
+            m_im_organics[i] = np.nan
 
     volume_total = (4 * math.pi * (vol_equi_radius_outer ** 3)) / 3
     volume_bc = (4 * math.pi * (vol_equi_radius_inner ** 3)) / 3

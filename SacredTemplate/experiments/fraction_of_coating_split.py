@@ -59,36 +59,7 @@ def build_model():
     return model
 """
 
-def build_model():
-    model = Sequential()
-    model.add(Input(shape=(8,)))
-    model.add(Dense(544, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(512, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(672, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(960, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(736, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(32, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(192, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
 
-    #model.add(Dense(224, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(128, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(64, kernel_initializer='normal', activation='relu'))
-    # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(3, kernel_initializer='normal', activation='sigmoid'))
-
-    # output_dense[:,0]=tf.keras.activations.sigmoid(output_dense[:,0])
-    # output_q_abs=  tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,0:1])
-    # output_q_sca= tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,1:2])
-    # output_g= tf.keras.layers.Activation(tf.nn.sigmoid)(output_dense[:,2:3])
-    # print(output_dense.shape)
-
-    # model=tf.keras.Model(inputs=input_layer, outputs= [output_q_abs, output_q_sca, output_g])
-    # model = tf.keras.Model(inputs=input_layer, outputs=output_dense)
-
-    return model
 if __name__ == '__main__':
     experiment = make_experiment()
 
@@ -100,11 +71,12 @@ if __name__ == '__main__':
             split_type='interpolating',
             split_lower=-1,
             split_upper=-1,
-            hidden_layers=-1,
+            hidden_layers=2,
             epochs=1000,
             patience=100,
             batch_size=32,
             hidden_units=512,
+            kernel_initializer='he_normal',
             #n_hidden=8,
             #dense_units=[416, 288, 256,256, 192,448,288,128, 352,224],
             #kernel_initializer=['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'],
@@ -157,9 +129,9 @@ if __name__ == '__main__':
         model.add(Input(shape=(8,)))
         for j in range(0, params.hidden_layers):
 
-            model.add(Dense(params.hidden_units, kernel_initializer='normal', activation='relu'))
+            model.add(Dense(params.hidden_units, kernel_initializer=params.kernel_initializer, activation='relu'))
 
-        model.add(Dense(3, kernel_initializer='normal', activation='sigmoid'))
+        model.add(Dense(3, kernel_initializer='glorot_normal', activation='sigmoid'))
 
 
 

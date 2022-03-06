@@ -8,7 +8,7 @@ import sys
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input, ReLU, PReLU
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, CSVLogger
@@ -64,19 +64,21 @@ if __name__ == '__main__':
     @experiment.config
     def config():
         params = dict(
-            split='q_abs',
+            split='inverse_q_abs',
             split_type='interpolating',
-            split_lower=0.6,
-            split_upper=1.2,
-            test_values=[],
-            epochs=500,
+            split_lower=-1,
+            split_upper=-1,
+            epochs=1000,
             patience=100,
             batch_size=32,
+            kernel_initializer='he_normal',
+            hidden_layers=2,
+            hidden_units=512,
             #n_hidden=8,
             #dense_units=[416, 288, 256,256, 192,448,288,128, 352,224],
             #kernel_initializer=['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'],
             activation='relu',
-            loss='huber_loss'
+            loss='mean_squared_error'
             #range=(10, 15)
         )
 
@@ -105,13 +107,13 @@ if __name__ == '__main__':
             test_set = df[(df['q_abs'] >= params.split_upper)]
 
         Y_train = train_set.iloc[:, [1,2]]
-        X_train = train_set.iloc[:, [0, 3, 6, 24, 25, 26, 27]]
+        X_train = train_set.iloc[:, [0, 3, 7, 24, 25, 26, 27]]
         Y_test = test_set.iloc[:, [1,2]]
-        X_test = test_set.iloc[:, [0, 3, 6, 24, 25, 26, 27]]
+        X_test = test_set.iloc[:, [0, 3, 7, 24, 25, 26, 27]]
 
-        # Standardizing data and targets
-        scaling_x = StandardScaler()
-        scaling_y = StandardScaler()
+        # Normalizing data and targets
+        scaling_x = MinMaxScaler()
+        scaling_y = MinMaxScaler()
         X_train = scaling_x.fit_transform(X_train)
         X_test = scaling_x.transform(X_test)
         Y_train = scaling_y.fit_transform(Y_train)
@@ -119,7 +121,13 @@ if __name__ == '__main__':
 
         #Build NN model
 
-        model = build_model()#params.actuvation
+        #model = build_model()#params.actuvation
+        model = Sequential()
+        model.add(Input(shape=(7,)))
+        for j in range(0, params.hidden_layers):
+            model.add(Dense(params.hidden_units, kernel_initializer=params.kernel_initializer, activation='relu'))
+
+        model.add(Dense(2, kernel_initializer='glorot_normal', activation='sigmoid'))
 
         #Compile model
         model.compile(loss=params.loss, optimizer='adam',
@@ -193,7 +201,7 @@ if __name__ == '__main__':
             _run.log_scalar('Absolute error fraction_of_coating', i)
 
         error = mean_absolute_error(Y_test, Y_pred, multioutput='raw_values')
-
+        _run.info['error'] = error
 
 
         #error=error*100

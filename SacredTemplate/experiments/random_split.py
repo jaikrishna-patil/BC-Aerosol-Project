@@ -18,38 +18,7 @@ from sklearn.metrics import mean_absolute_percentage_error,mean_absolute_error
 sys.path.append("../src")
 from utils.experiment import Bunch, make_experiment, make_experiment_tempfile
 
-def build_model():
-    model = Sequential()
-    model.add(Input(shape=(8,)))
-    model.add(Dense(544, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(512, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(672, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(960, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(736, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(32, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(192, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-
-    #model.add(Dense(224, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(128, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(64, kernel_initializer='normal', activation='relu'))
-    # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(3, kernel_initializer='normal', activation='linear'))
-
-    # output_dense[:,0]=tf.keras.activations.sigmoid(output_dense[:,0])
-    # output_q_abs=  tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,0:1])
-    # output_q_sca= tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,1:2])
-    # output_g= tf.keras.layers.Activation(tf.nn.sigmoid)(output_dense[:,2:3])
-    # print(output_dense.shape)
-
-    # model=tf.keras.Model(inputs=input_layer, outputs= [output_q_abs, output_q_sca, output_g])
-    # model = tf.keras.Model(inputs=input_layer, outputs=output_dense)
-
-    return model
 """
-
 def build_model():
     model = Sequential()
     model.add(Input(shape=(8,)))
@@ -101,9 +70,10 @@ if __name__ == '__main__':
             split_upper=-1,
             epochs=1000,
             patience=100,
-            hidden_layers=0,
+            hidden_layers=2,
             batch_size=32,
-            hidden_unis=512,
+            hidden_units=512,
+            kernel_initializer='he_normal',
             activation='relu',
             loss='mean_squared_error'
             #range=(10, 15)
@@ -128,7 +98,7 @@ if __name__ == '__main__':
             random_state=int(np.random.randint(2,100, size=1)))
 
         # Normalizaing Min max
-        scaling_x = StandardScaler()
+        scaling_x = MinMaxScaler()
         scaling_y = MinMaxScaler()
         X_train = scaling_x.fit_transform(X_train)
         X_test = scaling_x.transform(X_test)
@@ -141,9 +111,9 @@ if __name__ == '__main__':
         model = Sequential()
         model.add(Input(shape=(8,)))
         for j in range(0, params.hidden_layers):
-            model.add(Dense(params.hidden_units, kernel_initializer='normal', activation='relu'))
+            model.add(Dense(params.hidden_units, kernel_initializer=params.kernel_initializer, activation='relu'))
 
-        model.add(Dense(3, kernel_initializer='normal', activation='sigmoid'))
+        model.add(Dense(3, kernel_initializer='glorot_normal', activation='sigmoid'))
 
         #Compile model
         model.compile(loss=params.loss, optimizer='adam',

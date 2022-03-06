@@ -6,7 +6,7 @@ import sys
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input, LeakyReLU
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, CSVLogger
@@ -58,9 +58,15 @@ if __name__ == '__main__':
     def config():
         params = dict(
             split='inverse_random_split',
-            test_values=[],
+            split_type='random',
+            split_lower=-1,
+            split_upper=-1,
             epochs=1000,
+            patience=100,
+            hidden_layers=2,
             batch_size=32,
+            hidden_units=512,
+            kernel_initializer='he_normal',
             #n_hidden=8,
             #dense_units=[416, 288, 256,256, 192,448,288,128, 352,224],
             #kernel_initializer=['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'],
@@ -77,8 +83,8 @@ if __name__ == '__main__':
 
         #Load dataset
         df = pd.read_excel('database_new.xlsx')
-        #X = df.iloc[:, [0, 3, 6, 24, 25, 26, 27]]
-        X = df.iloc[:, [0, 24, 25, 26, 27]]
+        X = df.iloc[:, [0, 3, 6, 24, 25, 26, 27]]
+        #X = df.iloc[:, [0, 24, 25, 26, 27]]
         Y = df.iloc[:, [1, 2]]
 
         X_train, X_test, Y_train, Y_test = train_test_split(
@@ -87,8 +93,8 @@ if __name__ == '__main__':
             random_state=42)
 
         # Standardizing data and targets
-        scaling_x = StandardScaler()
-        scaling_y = StandardScaler()
+        scaling_x = MinMaxScaler()
+        scaling_y = MinMaxScaler()
         X_train = scaling_x.fit_transform(X_train)
         X_test = scaling_x.transform(X_test)
         Y_train = scaling_y.fit_transform(Y_train)
@@ -96,8 +102,13 @@ if __name__ == '__main__':
 
         #Build NN model
 
-        model = build_model()#params.actuvation
+        #model = build_model()#params.actuvation
+        model = Sequential()
+        model.add(Input(shape=(7,)))
+        for j in range(0, params.hidden_layers):
+            model.add(Dense(params.hidden_units, kernel_initializer=params.kernel_initializer, activation='relu'))
 
+        model.add(Dense(2, kernel_initializer='glorot_normal', activation='sigmoid'))
         #Compile model
         model.compile(loss=params.loss, optimizer='adam',
                       metrics=['mean_absolute_error'])
@@ -113,7 +124,7 @@ if __name__ == '__main__':
             checkpoint = ModelCheckpoint(model_file.name, verbose=1, monitor='val_loss', save_best_only=True, mode='auto')
 
             # # patient early stopping
-            es = EarlyStopping(monitor='val_loss', patience=200, verbose=1)
+            es = EarlyStopping(monitor='val_loss', patience=params.patience, verbose=1)
 
             #log_csv = CSVLogger('fractal_dimension_loss_logs.csv', separator=',', append=False)
 
@@ -170,6 +181,7 @@ if __name__ == '__main__':
             _run.log_scalar('Absolute error fraction_of_coating', i)
 
         error = mean_absolute_error(Y_test, Y_pred, multioutput='raw_values')
+        _run.info['error'] = error
 
 
 

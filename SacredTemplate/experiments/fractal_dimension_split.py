@@ -89,30 +89,6 @@ def build_model():
 """
 
 
-def build_model():
-    model = Sequential()
-    input_layer = Input(shape=(8,))
-    first_dense = Dense(units=544, kernel_initializer='normal', activation='relu')(input_layer)
-    second_dense = Dense(units=512, kernel_initializer='normal', activation='relu')(first_dense)
-    third_dense = Dense(units=672, kernel_initializer='normal', activation='relu')(second_dense)
-    fourth_dense = Dense(units=960, kernel_initializer='normal', activation='relu')(third_dense)
-    fifth_dense = Dense(units=736, kernel_initializer='normal', activation='relu')(fourth_dense)
-    # sixth_dense = Dense(units=128, kernel_initializer='normal', activation='relu')(fifth_dense)
-    # seventh_dense = Dense(units=32, kernel_initializer='normal', activation='relu')(sixth_dense)
-    # eighth_dense = Dense(units=64, kernel_initializer='normal', activation='relu')(seventh_dense)
-    sixth_dense = Dense(units=3, kernel_initializer='normal', activation='linear')(fifth_dense)
-    output_dense = sigmoid(sixth_dense)
-    # output_dense[:,0]=tf.keras.activations.sigmoid(output_dense[:,0])
-    # output_q_abs=  tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,0:1])
-    # output_q_sca= tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,1:2])
-    # output_g= tf.keras.layers.Activation(tf.nn.sigmoid)(output_dense[:,2:3])
-    # print(output_dense.shape)
-
-    # model=tf.keras.Model(inputs=input_layer, outputs= [output_q_abs, output_q_sca, output_g])
-    model = tf.keras.Model(inputs=input_layer, outputs=output_dense)
-
-    return model
-
 
 if __name__ == '__main__':
     experiment = make_experiment()
@@ -127,9 +103,10 @@ if __name__ == '__main__':
             split_upper=-1,
             epochs=1000,
             patience=100,
-            hidden_layers=0,
+            hidden_layers=2,
             batch_size=32,
             hidden_units=512,
+            kernel_initializer='he_normal',
             # n_hidden=8,
             # dense_units=[416, 288, 256,256, 192,448,288,128, 352,224],
             # kernel_initializer=['normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal'],
@@ -179,7 +156,7 @@ if __name__ == '__main__':
         Y_test = scaling_y.transform(Y_test)
         """
         # Normalizaing Min max
-        scaling_x = StandardScaler()
+        scaling_x = MinMaxScaler()
         scaling_y = MinMaxScaler()
         X_train = scaling_x.fit_transform(X_train)
         X_test = scaling_x.transform(X_test)
@@ -192,10 +169,10 @@ if __name__ == '__main__':
         model.add(Input(shape=(8,)))
         for j in range(0, params.hidden_layers):
 
-            model.add(Dense(params.hidden_units, kernel_initializer='he_normal', activation='relu'))
+            model.add(Dense(params.hidden_units, kernel_initializer=params.kernel_initializer, activation='relu'))
 
 
-        model.add(Dense(3, kernel_initializer='normal', activation='sigmoid'))
+        model.add(Dense(3, kernel_initializer='glorot_normal', activation='sigmoid'))
         # Compile model
         model.compile(loss=params.loss, optimizer='adam',
                       metrics=['mean_absolute_error'])
