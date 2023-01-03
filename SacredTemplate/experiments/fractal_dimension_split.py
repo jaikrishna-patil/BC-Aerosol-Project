@@ -5,7 +5,7 @@ import sys
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, PowerTransformer
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input, LeakyReLU
 from tensorflow.keras.activations import sigmoid
@@ -15,78 +15,6 @@ from keras.regularizers import l2
 
 sys.path.append("../src")
 from utils.experiment import Bunch, make_experiment, make_experiment_tempfile
-
-"""
-def build_model():
-    model = Sequential()
-    model.add(Input(shape=(8,)))
-    model.add(Dense(544, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(512, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(672, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(960, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(736, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(32, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(192, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-
-    #model.add(Dense(224, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(128, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(64, kernel_initializer='normal', activation='relu'))
-    # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    # model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(3, kernel_initializer='normal', activation='linear'))
-
-    # output_dense[:,0]=tf.keras.activations.sigmoid(output_dense[:,0])
-    # output_q_abs=  tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,0:1])
-    # output_q_sca= tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,1:2])
-    # output_g= tf.keras.layers.Activation(tf.nn.sigmoid)(output_dense[:,2:3])
-    # print(output_dense.shape)
-
-    # model=tf.keras.Model(inputs=input_layer, outputs= [output_q_abs, output_q_sca, output_g])
-    # model = tf.keras.Model(inputs=input_layer, outputs=output_dense)
-
-    return model
-
-
-def build_model():
-    model = Sequential()
-    model.add(Input(shape=(8,)))
-    model.add(Dense(192, kernel_initializer='normal'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(224, kernel_initializer='normal'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(32, kernel_initializer='normal'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(192, kernel_initializer='normal'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(96, kernel_initializer='normal'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(128, kernel_initializer='normal'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(224, kernel_initializer='normal'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(224, kernel_initializer='normal'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(128, kernel_initializer='normal'))
-    model.add(LeakyReLU(alpha=0.1))
-    model.add(Dense(64, kernel_initializer='normal'))
-    model.add(LeakyReLU(alpha=0.1))
-    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    #model.add(Dense(160, kernel_initializer='normal', activation='relu'))
-    model.add(Dense(3, kernel_initializer='normal', activation='linear'))
-
-    # output_dense[:,0]=tf.keras.activations.sigmoid(output_dense[:,0])
-    # output_q_abs=  tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,0:1])
-    # output_q_sca= tf.keras.layers.Activation(tf.nn.softplus)(output_dense[:,1:2])
-    # output_g= tf.keras.layers.Activation(tf.nn.sigmoid)(output_dense[:,2:3])
-    # print(output_dense.shape)
-
-    # model=tf.keras.Model(inputs=input_layer, outputs= [output_q_abs, output_q_sca, output_g])
-    #model = tf.keras.Model(inputs=input_layer, outputs=output_dense)
-
-    return model
-"""
 
 
 
@@ -146,23 +74,12 @@ if __name__ == '__main__':
         X_train = train_set.iloc[:, :8]
         Y_test = test_set.iloc[:, 25:28]
         X_test = test_set.iloc[:, :8]
-        """
-        # Standardizing data and targets
-        scaling_x = StandardScaler()
-        scaling_y = StandardScaler()
-        X_train = scaling_x.fit_transform(X_train)
-        X_test = scaling_x.transform(X_test)
-        Y_train = scaling_y.fit_transform(Y_train)
-        Y_test = scaling_y.transform(Y_test)
-        """
         # Normalizaing Min max
-        scaling_x = MinMaxScaler()
-        scaling_y = MinMaxScaler()
-        X_train = scaling_x.fit_transform(X_train)
-        X_test = scaling_x.transform(X_test)
-        Y_train = scaling_y.fit_transform(Y_train)
-        Y_test = scaling_y.transform(Y_test)
-        # Build NN model
+        pt = PowerTransformer(method='box-cox')
+        X_train_transformed = pt.fit_transform(X_train + 0.00000000001)
+        X_test_transformed = pt.transform(X_test + 0.00000000001)
+
+        print(pd.DataFrame({'cols': X_train.columns, 'box_cox_lambdas': pt.lambdas_}))
 
         #model = build_model()  # params.actuvation
         model = Sequential()

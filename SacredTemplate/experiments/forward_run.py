@@ -27,7 +27,7 @@ if __name__ == '__main__':
         params = dict(
             epochs=1000,
             patience=200,
-            hidden_layers=2,
+            hidden_layers=8,
             batch_size=32,
             hidden_units=512,
             kernel_initializer='he_normal',

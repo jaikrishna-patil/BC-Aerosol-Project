@@ -6,7 +6,8 @@ import numpy as np
 import pickle
 
 def main():
-    df_testing= pd.read_csv('..\data\database.csv')
+    df_testing = pd.read_excel('..\..\data\database_new.xlsx')
+    #df_testing= pd.read_csv('..\data\database.csv')
     X_test = df_testing.loc[:, ['wavelength', 'fractal_dimension', 'fraction_of_coating', 'primary_particle_size',
                    'number_of_primary_particles',
                    'vol_equi_radius_outer', 'vol_equi_radius_inner', 'equi_mobility_dia']]
@@ -16,11 +17,11 @@ def main():
     #X_train = scaling_x.fit_transform(X_train)
     #X_test = scaling_x.fit_transform(X_test)
     #Y_train = scaling_y.fit_transform(Y_train)
-    scaling_x = pickle.load(open('..\data\scaler_x.sav', 'rb'))
-    scaling_y = pickle.load(open('..\data\scaler_y.sav', 'rb'))
+    scaling_x = pickle.load(open('..\..\data\scaler_x.sav', 'rb'))
+    scaling_y = pickle.load(open('..\..\data\scaler_y.sav', 'rb'))
     X_test= scaling_x.transform(X_test)
 
-    model = load_model('../data/best_model_forward.hdf5')
+    model = load_model('../../data/best_model_forward.hdf5')
     Y_test = model.predict(X_test)
     Y_test = scaling_y.inverse_transform(Y_test)
     #print(Y_test)
@@ -123,7 +124,7 @@ def main():
                       'volume_total', 'volume_bc', 'volume_organics', 'density_bc', 'density_organics', 'mass_total', 'mass_organics',
                       'mass_bc', 'mr_total_bc', 'mr_nonbc_bc', 'q_ext', 'q_abs', 'q_sca', 'g', 'c_geo', 'c_ext', 'c_abs', 'c_sca', 'ssa',
                       'mac_total', 'mac_bc', 'mac_organics'])
-    final_dataset.to_csv('..\data\predicted_forward_dataset.csv', index=False)
+    final_dataset.to_csv('..\..\data\predicted_forward_dataset.csv', index=False)
 
 if __name__ == "__main__":
     main()
